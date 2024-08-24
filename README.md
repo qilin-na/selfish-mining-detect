@@ -1,58 +1,58 @@
-### 操作指南：使用 selfish-mining-detect 服务检测自私矿工
+### 操作指南: 使用 `selfish-mining-detect` 程序
 
-本指南将帮助您安装、部署和使用自私挖矿检测程序，以检测区块链中的自私矿工。
+该指南介绍如何安装、部署和使用 `selfish-mining-detect` 程序，程序已打包为 Docker 镜像并上传到 Docker Hub。
 
 ---
 
-### 1. 环境准备
+### 1. 拉取 Docker 镜像
 
-#### 1.1 安装 Python
-首先，确保您的系统上安装了 Python 3.6 或更高版本。可以通过以下命令检查您的 Python 版本：
-
-```bash
-python --version
-```
-
-#### 1.2 安装依赖包
-在终端或命令行中导航到项目文件夹，然后安装所需的 Python 包。使用以下命令安装依赖包：
+在使用该程序之前，您需要从 Docker Hub 拉取 Docker 镜像：
 
 ```bash
-pip install -r requirements.txt
+docker pull linking86/selfish-mining-detect:latest
 ```
 
 ---
 
-### 2. 代码部署
+### 2. 运行 Docker 容器
 
-#### 2.1 获取代码
-
-```bash
-git clone https://github.com/qilin-na/selfish-mining-detect.git
-```
-
-#### 2.2 运行服务
-在终端或命令行中导航到 `app.py` 文件所在的目录，运行以下命令启动 Flask 服务：
+使用以下命令运行容器：
 
 ```bash
-python app.py
+docker run -d -p 5000:5000 linking86/selfish-mining-detect:latest
 ```
 
-如果一切正常，您将看到类似于以下的输出：
-
-```
- * Serving Flask app 'app'
- * Running on http://0.0.0.0:5000/ (Press CTRL+C to quit)
-```
-
-此时，服务已启动，并在端口 `5000` 上运行。
+这将在本地的 5000 端口启动 Flask 应用程序。
 
 ---
 
-### 3. 使用服务
+### 3. 使用 API 进行自私挖矿检测
 
-#### 3.1 输入格式
-要检测自私矿工，您需要向 `/detect` 端点发送一个 `POST` 请求。请求体应为 JSON 格式，并包含以下字段：
+API 通过 POST 请求与 `/detect` 路由进行交互。您可以使用 `curl` 或其他 HTTP 客户端工具（如 Postman，Apifox等）发送请求。
 
+#### 请求格式
+
+**请求URL：**
+```
+http://<server-ip>:5000/detect
+```
+
+**请求方法：**
+- POST
+
+**请求头：**
+- Content-Type: application/json
+
+**请求体（JSON格式）：**
+```json
+{
+  "chain_choice": <int>,
+  "date_range": "<start_date> - <end_date>",
+  "block_count": <int>
+}
+```
+
+**参数说明：**
 - `chain_choice`: 必选，选择区块链类型
   - 1: 比特币（BTC）
   - 2: 比特币现金（BCH）
@@ -64,26 +64,23 @@ python app.py
 #### 示例请求
 
 ```bash
-curl -X POST -H "Content-Type: application/json" -d "{\"chain_choice\":1, \"date_range\":\"2024年08月01日-2024年08月07日\", \"block_count\":950}" http://localhost:5000/detect
+curl -X POST -H "Content-Type: application/json" -d "{\"chain_choice\":1, \"date_range\":\"2024年08月01日-2024年08月07日\", \"block_count\":500}"  http://localhost:5000/detect
 ```
 
-您也可以使用 Postman 或其他 API 测试工具发送类似请求。
+---
 
-#### 3.2 输出格式
-服务器将返回一个包含检测结果的 JSON 响应。响应格式如下：
+### 4. 返回结果
 
-- **`result`**：字符串，列出检测到的自私矿工或通知没有自私矿工。
+API 会返回 JSON 格式的结果，说明是否检测到自私挖矿行为。
 
-例如，可能的响应为：
-
+**成功返回：**
 ```json
 {
-  "result": "Selfish miners: ['Miner1', 'Miner2']"
+  "result": "Selfish miners: ['miner1', 'miner2']"
 }
 ```
 
-或者
-
+**未检测到自私挖矿者：**
 ```json
 {
   "result": "There is no selfish miner."
@@ -92,7 +89,7 @@ curl -X POST -H "Content-Type: application/json" -d "{\"chain_choice\":1, \"date
 
 ---
 
-### 4. 文件结构和说明
+### 5. 文件结构和说明
 
 确保数据文件按以下结构存放在项目目录中：
 
@@ -111,8 +108,10 @@ project_directory/
 │       └── blocks/
 ```
 
-- **`BTC`/`BCH`/`ETH`/`LTC` 文件夹**：包含相应区块链的区块数据，数据应以 `.tsv` 格式存放在 `blocks` 文件夹内。具体数据格式可参考对应的`example_XXX.tsv`文件。
+- **`BTC`/`BCH`/`ETH`/`LTC` 文件夹**：包含相应区块链的区块数据，数据应以 `.tsv` 格式存放在 `blocks` 文件夹内。具体数据格式可参考对应的`example_XXX.tsv`文件；
+- 如果要使用指定日期范围功能，文件命名需要以`your_blocks_name_YYYYMMDD.tsv`为规范，详情可参考对应文件夹下的`example_XXX_20240801.tsv`的文件命名。
 
 ---
+
 
 通过以上步骤，您可以顺利地使用 `selfish-mining-detect` 程序检测区块链网络中的自私挖矿行为。
